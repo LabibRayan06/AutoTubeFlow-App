@@ -18,9 +18,14 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const originalUrl = session.redirectUrl || '/';
+  
+  // Clear the redirectUrl from the session
+  session.redirectUrl = undefined;
+
 
   if (!code) {
     const error = searchParams.get('error') || 'Unknown error';
+    await session.save();
     return NextResponse.redirect(`${originalUrl}?google_auth_error=${encodeURIComponent(error)}`);
   }
 
@@ -35,6 +40,7 @@ export async function GET(req: NextRequest) {
     // Redirect back to the original page with success indicator
     return NextResponse.redirect(`${originalUrl}?google_auth_success=true`);
   } catch (error: any) {
+    await session.save();
     const errorMessage = error.message || 'Failed to authenticate with Google.';
     return NextResponse.redirect(`${originalUrl}?google_auth_error=${encodeURIComponent(errorMessage)}`);
   }

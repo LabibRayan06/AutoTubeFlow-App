@@ -26,7 +26,7 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const { url } = await getGoogleAuthUrl();
+      const { url } = await getGoogleAuthUrl({ originalUrl: window.location.href });
       // Redirect the user to the Google authentication page
       window.location.href = url;
     } catch (error) {
@@ -68,15 +68,15 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
         <p className="font-semibold mb-4">We will request the following permissions:</p>
         <ul className="space-y-3 text-muted-foreground">
           <li className="flex items-center gap-3">
-            <Youtube className="w-5 h-5 text-red-500" />
+            <Youtube className="w-5 h-5 text-primary-foreground/70" />
             <span>YouTube Data API (for video uploads)</span>
           </li>
           <li className="flex items-center gap-3">
-            <Database className="w-5 h-5 text-blue-500" />
+            <Database className="w-5 h-5 text-primary-foreground/70" />
             <span>Google Drive API (to create and manage files)</span>
           </li>
           <li className="flex items-center gap-3">
-            <FileSpreadsheet className="w-5 h-5 text-green-500" />
+            <FileSpreadsheet className="w-5 h-5 text-primary-foreground/70" />
             <span>Google Sheets API (to log video data)</span>
           </li>
         </ul>

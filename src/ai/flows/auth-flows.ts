@@ -11,6 +11,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { google } from 'googleapis';
+import { IronSession, getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { SessionData, sessionOptions } from '@/lib/session';
+
 
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
@@ -18,30 +22,42 @@ const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/youtube.upload'
 ];
 
-function getGoogleOAuth2Client() {
+function getGoogleOAuth2Client(redirectUri?: string) {
   if (!process.env.NEXT_PUBLIC_BASE_URL) {
     throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set.');
   }
-  const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`;
+  const defaultRedirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`;
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri
+    redirectUri || defaultRedirectUri
   );
 }
+
+const GetGoogleAuthUrlInputSchema = z.object({
+  originalUrl: z.string().url(),
+});
 
 export const getGoogleAuthUrl = ai.defineFlow(
   {
     name: 'getGoogleAuthUrl',
+    inputSchema: GetGoogleAuthUrlInputSchema,
     outputSchema: z.object({ url: z.string() }),
   },
-  async () => {
-    const oauth2Client = getGoogleOAuth2Client();
+  async ({ originalUrl }) => {
+    const session: IronSession<SessionData> = await getIronSession(cookies(), sessionOptions);
+    const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`;
+    const oauth2Client = getGoogleOAuth2Client(redirectUri);
+
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: GOOGLE_SCOPES,
       prompt: 'consent',
     });
+
+    session.redirectUrl = originalUrl;
+    await session.save();
+
     return { url };
   }
 );
