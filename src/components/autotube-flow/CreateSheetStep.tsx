@@ -33,14 +33,14 @@ export default function CreateSheetStep({ onComplete }: Props) {
         toast({
           variant: "destructive",
           title: "Sheet Creation Failed",
-          description: "Could not create the Google Sheet. Please try again.",
+          description: result.message || "Could not create the Google Sheet. Please try again.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "An Error Occurred",
-        description: "Something went wrong while creating the sheet.",
+        description: error.message || "Something went wrong while creating the sheet.",
       });
       console.error(error);
     } finally {

@@ -35,11 +35,19 @@ async function getGoogleApiClients() {
 
   // Check if the access token is expired and refresh if necessary
   if (auth.isTokenExpiring()) {
-    const { credentials } = await auth.refreshAccessToken();
-    session.google_tokens = credentials;
-    await session.save();
-    auth.setCredentials(credentials);
+    console.log("Google token is expiring. Refreshing...");
+    try {
+        const { credentials } = await auth.refreshAccessToken();
+        session.google_tokens = credentials;
+        await session.save();
+        auth.setCredentials(credentials);
+        console.log("Google token refreshed successfully.");
+    } catch (refreshError: any) {
+        console.error("Failed to refresh Google token:", refreshError);
+        throw new Error(`Could not refresh authentication token. Please try logging in again. Details: ${refreshError.message}`);
+    }
   }
+
 
   const sheets = google.sheets({ version: 'v4', auth });
   const drive = google.drive({ version: 'v3', auth });
@@ -80,10 +88,11 @@ export const createSheet = ai.defineFlow(
         const missingColumns = REQUIRED_COLUMNS.filter(col => !existingColumns.includes(col));
 
         if (missingColumns.length > 0) {
-            console.error(`Sheet exists but is missing columns: ${missingColumns.join(', ')}`);
+            const errorMessage = `The existing sheet is missing the following required columns: ${missingColumns.join(', ')}. Please add them manually or delete the sheet and try again.`;
+            console.error(errorMessage);
             return {
                 success: false,
-                message: `The existing sheet is missing the following columns: ${missingColumns.join(', ')}. Please add them or delete the sheet and try again.`
+                message: errorMessage
             }
         }
 
@@ -119,8 +128,9 @@ export const createSheet = ai.defineFlow(
       return { success: true, sheetId: sheetId };
 
     } catch (error: any) {
-        console.error('Error in createSheet flow:', error);
-        return { success: false, message: error.message || 'An unknown error occurred while creating the sheet.' };
+        console.error('Error in createSheet flow:', error.response?.data?.error || error);
+        const detail = error.response?.data?.error?.message || error.message || 'An unknown error occurred.';
+        return { success: false, message: `An error occurred while managing the sheet. Details: ${detail}` };
     }
   }
 );
