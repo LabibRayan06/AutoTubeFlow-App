@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Github, GitFork, KeyRound, Loader2 } from "lucide-react";
-import { connectGithub } from "@/ai/flows/auth-flows";
+import { getGithubAuthUrl } from "@/ai/flows/auth-flows";
 import { useToast } from "@/hooks/use-toast";
 
 type Props = {
@@ -25,27 +25,36 @@ export default function ConnectGithubStep({ onComplete }: Props) {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const result = await connectGithub();
-      if (result.success) {
-        onComplete();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "GitHub Connection Failed",
-          description: "Could not connect to your GitHub account. Please try again.",
-        });
-      }
+      const { url } = await getGithubAuthUrl({ originalUrl: window.location.href });
+      // Redirect the user to the GitHub authentication page
+      window.location.href = url;
     } catch (error) {
        toast({
         variant: "destructive",
         title: "An Error Occurred",
-        description: "Something went wrong while connecting to GitHub.",
+        description: "Something went wrong while preparing GitHub connection.",
       });
       console.error(error);
-    } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("github_auth_success") === "true") {
+      // Clear the query params from URL and call onComplete
+      window.history.replaceState({}, document.title, window.location.pathname);
+      onComplete();
+    } else if (query.get("github_auth_error")) {
+        toast({
+          variant: "destructive",
+          title: "GitHub Connection Failed",
+          description: decodeURIComponent(query.get("github_auth_error") as string),
+        });
+        // Clear the query params from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [onComplete, toast]);
 
   return (
     <Card className="shadow-lg border-border/60">

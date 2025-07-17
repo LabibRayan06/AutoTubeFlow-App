@@ -1,9 +1,10 @@
-import type { IronSessionOptions } from 'iron-session';
-import type { JWT } from 'googleapis-common';
 import dotenv from 'dotenv';
 import path from 'path';
+import type { IronSessionOptions } from 'iron-session';
+import type { JWT } from 'googleapis-common';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
 
 if (!process.env.AUTH_SECRET) {
   throw new Error('AUTH_SECRET environment variable is not set.');

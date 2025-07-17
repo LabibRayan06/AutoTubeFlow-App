@@ -27,19 +27,23 @@ export default function ForkRepoStep({ onComplete }: Props) {
     try {
       const result = await forkRepo();
       if (result.success) {
+        toast({
+          title: "Success!",
+          description: result.message || "Repository configured successfully.",
+        });
         onComplete();
       } else {
         toast({
           variant: "destructive",
           title: "Repository Fork Failed",
-          description: "Could not fork the repository. Please try again.",
+          description: result.message || "Could not fork the repository. Please try again.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
        toast({
         variant: "destructive",
         title: "An Error Occurred",
-        description: "Something went wrong while configuring the repository.",
+        description: error.message || "Something went wrong while configuring the repository.",
       });
       console.error(error);
     } finally {
@@ -47,7 +51,7 @@ export default function ForkRepoStep({ onComplete }: Props) {
     }
   };
   
-  const secrets = ["YT_ACCESS_TOKEN", "DRIVE_ACCESS_TOKEN", "SHEETS_ACCESS_TOKEN", "SHEET_ID"];
+  const secrets = ["YT_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "SHEET_ID"];
 
   return (
     <Card className="shadow-lg border-border/60">
@@ -69,6 +73,7 @@ export default function ForkRepoStep({ onComplete }: Props) {
                     <div key={secret} className="bg-muted text-muted-foreground text-sm font-mono px-2 py-1 rounded-md">{secret}</div>
                 ))}
             </div>
+             <p className="text-xs text-muted-foreground mt-3">Note: Secrets will be added to your forked repository to allow the GitHub Action to access your Google account and Sheet.</p>
         </div>
       </CardContent>
       <CardFooter>
