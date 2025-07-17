@@ -25,7 +25,7 @@ export default function CreateSheetStep({ onComplete }: Props) {
   const handleCreate = async () => {
     setIsLoading(true);
     try {
-      const result = await createSheet({});
+      const result = await createSheet();
       if (result.success && result.sheetId) {
         localStorage.setItem("autotube-sheet-id", result.sheetId);
         onComplete();

@@ -25,7 +25,7 @@ export default function ConnectGithubStep({ onComplete }: Props) {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const result = await connectGithub({});
+      const result = await connectGithub();
       if (result.success) {
         onComplete();
       } else {

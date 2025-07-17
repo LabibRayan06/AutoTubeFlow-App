@@ -25,7 +25,7 @@ export default function ForkRepoStep({ onComplete }: Props) {
   const handleFork = async () => {
     setIsLoading(true);
     try {
-      const result = await forkRepo({});
+      const result = await forkRepo();
       if (result.success) {
         onComplete();
       } else {

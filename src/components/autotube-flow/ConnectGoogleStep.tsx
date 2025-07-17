@@ -26,7 +26,7 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const { url } = await getGoogleAuthUrl({});
+      const { url } = await getGoogleAuthUrl();
       // Redirect the user to the Google authentication page
       window.location.href = url;
     } catch (error) {
