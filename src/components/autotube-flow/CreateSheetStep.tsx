@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2, Table } from "lucide-react";
+import { createSheet } from "@/ai/flows/sheet-flows";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   onComplete: () => void;
@@ -18,13 +20,32 @@ type Props = {
 
 export default function CreateSheetStep({ onComplete }: Props) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await createSheet();
+      if (result.success && result.sheetId) {
+        localStorage.setItem("autotube-sheet-id", result.sheetId);
+        onComplete();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Sheet Creation Failed",
+          description: "Could not create the Google Sheet. Please try again.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "An Error Occurred",
+        description: "Something went wrong while creating the sheet.",
+      });
+      console.error(error);
+    } finally {
       setIsLoading(false);
-      onComplete();
-    }, 1500);
+    }
   };
   
   const columns = ["Url", "Title", "Description", "DateAdded", "isProcessed", "VideoId"];

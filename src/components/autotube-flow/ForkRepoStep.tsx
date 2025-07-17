@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, GitFork, KeyRound, Loader2 } from "lucide-react";
+import { forkRepo } from "@/ai/flows/auth-flows";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   onComplete: () => void;
@@ -18,13 +20,31 @@ type Props = {
 
 export default function ForkRepoStep({ onComplete }: Props) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleFork = () => {
+  const handleFork = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await forkRepo();
+      if (result.success) {
+        onComplete();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Repository Fork Failed",
+          description: "Could not fork the repository. Please try again.",
+        });
+      }
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "An Error Occurred",
+        description: "Something went wrong while configuring the repository.",
+      });
+      console.error(error);
+    } finally {
       setIsLoading(false);
-      onComplete();
-    }, 2000);
+    }
   };
   
   const secrets = ["YT_ACCESS_TOKEN", "DRIVE_ACCESS_TOKEN", "SHEETS_ACCESS_TOKEN", "SHEET_ID"];

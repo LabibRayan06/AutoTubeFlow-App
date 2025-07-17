@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link, Loader2, PartyPopper, RotateCcw } from "lucide-react";
+import { addUrlToSheet } from "@/ai/flows/sheet-flows";
 
 const formSchema = z.object({
   url: z.string().url({ message: "Please enter a valid video URL." }),
@@ -44,30 +45,33 @@ export default function Dashboard({ onReset }: Props) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    console.log(values);
-
-    setTimeout(() => {
-      // Simulate checking if the URL exists
-      const alreadyExists = Math.random() > 0.5;
-
-      if (alreadyExists) {
-        toast({
-          variant: "destructive",
-          title: "URL Already Exists",
-          description: "This video URL is already in your Google Sheet.",
-        });
-      } else {
+    try {
+      const result = await addUrlToSheet(values);
+      if (result.success) {
         toast({
           title: "URL Added!",
-          description: "The video details have been added to your Google Sheet for processing.",
+          description: result.message,
         });
         form.reset();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "URL Not Added",
+          description: result.message,
+        });
       }
-
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "An Error Occurred",
+        description: "Something went wrong while submitting the URL.",
+      });
+      console.error(error);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   }
 
   return (
@@ -93,7 +97,7 @@ export default function Dashboard({ onReset }: Props) {
                   <FormControl>
                     <div className="relative">
                       <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="https://www.youtube.com/watch?v=..." {...field} className="pl-10"/>
+                      <Input placeholder="https://www.youtube.com/watch?v=... (try 'duplicate' in url for error)" {...field} className="pl-10"/>
                     </div>
                   </FormControl>
                   <FormMessage />

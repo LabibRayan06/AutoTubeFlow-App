@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Database, FileSpreadsheet, Loader2, Youtube } from "lucide-react";
+import { connectGoogle } from "@/ai/flows/auth-flows";
+import { useToast } from "@/hooks/use-toast";
+
 
 type Props = {
   onComplete: () => void;
@@ -18,13 +21,31 @@ type Props = {
 
 export default function ConnectGoogleStep({ onComplete }: Props) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await connectGoogle();
+      if (result.success) {
+        onComplete();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Google Connection Failed",
+          description: "Could not connect to your Google account. Please try again.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "An Error Occurred",
+        description: "Something went wrong while connecting to Google.",
+      });
+      console.error(error);
+    } finally {
       setIsLoading(false);
-      onComplete();
-    }, 1500);
+    }
   };
 
   return (

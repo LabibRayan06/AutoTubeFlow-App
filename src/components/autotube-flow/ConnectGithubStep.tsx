@@ -10,7 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Github, GitFork, KeyRound, Loader2 } from "lucide-react";
+import { Github, GitFork, KeyRound, Loader2 } from "lucide-react";
+import { connectGithub } from "@/ai/flows/auth-flows";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   onComplete: () => void;
@@ -18,13 +20,31 @@ type Props = {
 
 export default function ConnectGithubStep({ onComplete }: Props) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await connectGithub();
+      if (result.success) {
+        onComplete();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "GitHub Connection Failed",
+          description: "Could not connect to your GitHub account. Please try again.",
+        });
+      }
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "An Error Occurred",
+        description: "Something went wrong while connecting to GitHub.",
+      });
+      console.error(error);
+    } finally {
       setIsLoading(false);
-      onComplete();
-    }, 1500);
+    }
   };
 
   return (
