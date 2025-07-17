@@ -5,7 +5,7 @@ if (!process.env.AUTH_SECRET) {
   throw new Error('AUTH_SECRET environment variable is not set.');
 }
 
-export type SessionData = {
+export interface SessionData {
   google_tokens?: JWT['credentials'];
   github_token?: string;
   sheet_id?: string;
