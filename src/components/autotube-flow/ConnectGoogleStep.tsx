@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -42,7 +42,7 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
   
   // This effect will run when the user is redirected back from Google
   // and completes the step if authentication was successful.
-  useState(() => {
+  useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     if (query.get("google_auth_success") === "true") {
       onComplete();
@@ -53,7 +53,7 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
           description: decodeURIComponent(query.get("google_auth_error") as string),
         });
     }
-  });
+  }, [onComplete, toast]);
 
 
   return (
