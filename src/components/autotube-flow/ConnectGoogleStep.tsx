@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Database, FileSpreadsheet, Loader2, Youtube } from "lucide-react";
 import { getGoogleAuthUrl } from "@/ai/flows/auth-flows";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 
 type Props = {
@@ -64,8 +66,16 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
           Grant access to your Google services to allow AutoTubeFlow to manage your content.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <p className="font-semibold mb-4">We will request the following permissions:</p>
+      <CardContent className="space-y-4">
+        <Alert>
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Heads up!</AlertTitle>
+          <AlertDescription>
+            Make sure you have enabled the <strong>Google Drive API</strong> and <strong>Google Sheets API</strong> in your Google Cloud project console.
+          </AlertDescription>
+        </Alert>
+
+        <p className="font-semibold">We will request the following permissions:</p>
         <ul className="space-y-3 text-muted-foreground">
           <li className="flex items-center gap-3">
             <Youtube className="w-5 h-5 text-primary-foreground/70" />
