@@ -5,6 +5,15 @@ import { IronSession, getIronSession } from 'iron-session';
 import { SessionData, sessionOptions } from '@/lib/session';
 
 async function getGoogleOAuth2Client() {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set.');
+  }
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new Error('GOOGLE_CLIENT_ID environment variable is not set.');
+  }
+  if (!process.env.GOOGLE_CLIENT_SECRET) {
+    throw new Error('GOOGLE_CLIENT_SECRET environment variable is not set.');
+  }
   const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`;
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
