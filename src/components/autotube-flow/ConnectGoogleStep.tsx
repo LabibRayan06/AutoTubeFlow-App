@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Database, FileSpreadsheet, Loader2, Youtube } from "lucide-react";
-import { connectGoogle } from "@/ai/flows/auth-flows";
+import { getGoogleAuthUrl } from "@/ai/flows/auth-flows";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -26,16 +26,9 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const result = await connectGoogle();
-      if (result.success) {
-        onComplete();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Google Connection Failed",
-          description: "Could not connect to your Google account. Please try again.",
-        });
-      }
+      const { url } = await getGoogleAuthUrl();
+      // Redirect the user to the Google authentication page
+      window.location.href = url;
     } catch (error) {
       toast({
         variant: "destructive",
@@ -43,10 +36,25 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
         description: "Something went wrong while connecting to Google.",
       });
       console.error(error);
-    } finally {
       setIsLoading(false);
     }
   };
+  
+  // This effect will run when the user is redirected back from Google
+  // and completes the step if authentication was successful.
+  useState(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("google_auth_success") === "true") {
+      onComplete();
+    } else if (query.get("google_auth_error")) {
+        toast({
+          variant: "destructive",
+          title: "Google Connection Failed",
+          description: decodeURIComponent(query.get("google_auth_error") as string),
+        });
+    }
+  });
+
 
   return (
     <Card className="shadow-lg border-border/60">
@@ -78,7 +86,7 @@ export default function ConnectGoogleStep({ onComplete }: Props) {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting...
+              Redirecting...
             </>
           ) : (
             <>

@@ -3,26 +3,47 @@
 /**
  * @fileoverview Authentication flows for Google and GitHub.
  *
- * - connectGoogle - Simulates a Google connection.
+ * - getGoogleAuthUrl - Generates a URL for Google OAuth.
  * - connectGithub - Simulates a GitHub connection.
  * - forkRepo - Simulates forking a GitHub repo.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { google } from 'googleapis';
 
-export const connectGoogle = ai.defineFlow(
+const GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/youtube.upload'
+];
+
+function getGoogleOAuth2Client() {
+  const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`;
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri
+  );
+}
+
+export const getGoogleAuthUrl = ai.defineFlow(
   {
-    name: 'connectGoogle',
+    name: 'getGoogleAuthUrl',
     inputSchema: z.undefined(),
-    outputSchema: z.object({ success: z.boolean() }),
+    outputSchema: z.object({ url: z.string() }),
   },
   async () => {
-    // In a real app, this would handle the OAuth flow with Google.
-    // For now, we'll simulate a successful connection.
-    return { success: true };
+    const oauth2Client = getGoogleOAuth2Client();
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: GOOGLE_SCOPES,
+      prompt: 'consent',
+    });
+    return { url };
   }
 );
+
 
 export const connectGithub = ai.defineFlow(
   {
