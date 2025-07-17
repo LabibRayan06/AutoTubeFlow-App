@@ -19,6 +19,9 @@ const GOOGLE_SCOPES = [
 ];
 
 function getGoogleOAuth2Client() {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set.');
+  }
   const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`;
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
