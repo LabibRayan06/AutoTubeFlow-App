@@ -14,7 +14,7 @@ To get started, take a look at `src/app/page.tsx`.
     cp .env.local.example .env.local
     ```
 
-2.  **Fill in the environment variables:** You will need to create OAuth credentials in the Google Cloud Console and add the Client ID, Client Secret, and your local development base URL (e.g., `http://localhost:9002`) to the `.env.local` file.
+2.  **Fill in the environment variables:** You will need to create OAuth credentials in the Google Cloud Console and add the Client ID, Client Secret, and your local development base URL (e.g., `http://localhost:9002`) to the `.env.local` file. You also need to add a secret for `iron-session` to encrypt cookies. You can generate a new one by running `openssl rand -base64 32` in your terminal.
 
 3.  **Run the development server:**
 
