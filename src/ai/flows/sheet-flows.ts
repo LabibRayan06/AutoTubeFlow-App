@@ -12,7 +12,6 @@ import { z } from 'zod';
 export const createSheet = ai.defineFlow(
   {
     name: 'createSheet',
-    inputSchema: z.undefined(),
     outputSchema: z.object({ success: z.boolean(), sheetId: z.string().optional() }),
   },
   async () => {

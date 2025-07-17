@@ -30,7 +30,6 @@ function getGoogleOAuth2Client() {
 export const getGoogleAuthUrl = ai.defineFlow(
   {
     name: 'getGoogleAuthUrl',
-    inputSchema: z.undefined(),
     outputSchema: z.object({ url: z.string() }),
   },
   async () => {
@@ -48,7 +47,6 @@ export const getGoogleAuthUrl = ai.defineFlow(
 export const connectGithub = ai.defineFlow(
   {
     name: 'connectGithub',
-    inputSchema: z.undefined(),
     outputSchema: z.object({ success: z.boolean() }),
   },
   async () => {
@@ -61,7 +59,6 @@ export const connectGithub = ai.defineFlow(
 export const forkRepo = ai.defineFlow(
   {
     name: 'forkRepo',
-    inputSchema: z.undefined(),
     outputSchema: z.object({ success: z.boolean() }),
   },
   async () => {
