@@ -1,0 +1,124 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Link, Loader2, PartyPopper, RotateCcw } from "lucide-react";
+
+const formSchema = z.object({
+  url: z.string().url({ message: "Please enter a valid video URL." }),
+});
+
+type Props = {
+  onReset: () => void;
+};
+
+export default function Dashboard({ onReset }: Props) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      url: "",
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    console.log(values);
+
+    setTimeout(() => {
+      // Simulate checking if the URL exists
+      const alreadyExists = Math.random() > 0.5;
+
+      if (alreadyExists) {
+        toast({
+          variant: "destructive",
+          title: "URL Already Exists",
+          description: "This video URL is already in your Google Sheet.",
+        });
+      } else {
+        toast({
+          title: "URL Added!",
+          description: "The video details have been added to your Google Sheet for processing.",
+        });
+        form.reset();
+      }
+
+      setIsLoading(false);
+    }, 1500);
+  }
+
+  return (
+    <Card className="w-full max-w-2xl mx-auto shadow-lg border-border/60">
+      <CardHeader className="text-center">
+        <div className="flex justify-center items-center gap-2 w-max mx-auto mb-2">
+            <PartyPopper className="w-8 h-8 text-accent" />
+        </div>
+        <CardTitle className="text-2xl">Setup Complete!</CardTitle>
+        <CardDescription>
+          You're all set. Enter a video URL below to add it to your processing queue.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Video URL</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="https://www.youtube.com/watch?v=..." {...field} className="pl-10"/>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit URL"
+              )}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+      <CardFooter>
+        <Button variant="link" size="sm" onClick={onReset} className="mx-auto text-muted-foreground">
+            <RotateCcw className="mr-2 h-3 w-3" />
+            Start Over
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
