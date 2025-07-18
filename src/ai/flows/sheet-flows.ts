@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -165,7 +166,7 @@ export const addUrlToSheet = ai.defineFlow(
             range: range,
         });
 
-        const existingUrls = response.data.values?.flat() || [];
+        const existingUrls = response.data.values ? response.data.values.flat() : [];
         if (existingUrls.includes(url)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
         }
