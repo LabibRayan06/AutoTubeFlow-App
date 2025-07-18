@@ -151,18 +151,16 @@ export const addUrlToSheet = ai.defineFlow(
 
         const sheetId = session.sheet_id;
         
-        // 1. Check for duplicate URL in the "Url" column (A)
-        // We read the whole column A:A, which works even if the sheet is empty or only has a header.
-        const range = `'${SHEET_NAME}'!A:A`;
+        // 1. Check for duplicate URL in the "Url" column (A), starting from the second row.
+        const range = `'${SHEET_NAME}'!A2:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
         });
 
-        // The 'values' property may be undefined if the sheet is completely empty.
-        // We handle this case by treating it as an empty array.
+        // The 'values' property may be undefined if the range is empty (e.g., sheet only has a header).
         const values = response.data.values || [];
-        const existingUrls = values.flat(); // .flat() is safe on an empty array.
+        const existingUrls = values.flat(); 
 
         if (existingUrls.includes(url)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
@@ -182,7 +180,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `'${SHEET_NAME}'`, // Append to the end of the sheet
+            range: `'${SHEET_NAME}'!A:F`, 
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
