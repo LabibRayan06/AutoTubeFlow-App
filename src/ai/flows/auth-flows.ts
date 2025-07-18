@@ -15,7 +15,7 @@ import { IronSession, getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { SessionData, sessionOptions } from '@/lib/session';
 import { Octokit } from 'octokit';
-import * as sodium from 'libsodium-wrappers';
+import sodium from 'libsodium-wrappers';
 
 
 const GOOGLE_SCOPES = [
