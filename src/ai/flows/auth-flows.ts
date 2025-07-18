@@ -15,6 +15,7 @@ import { IronSession, getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { SessionData, sessionOptions } from '@/lib/session';
 import { Octokit } from 'octokit';
+import * as sodium from 'libsodium-wrappers';
 
 
 const GOOGLE_SCOPES = [
@@ -164,40 +165,29 @@ export const forkRepo = ai.defineFlow(
         };
 
         console.log('Adding secrets to the forked repository...');
+        
+        // We need to get the public key for the repo to encrypt secrets
+        const { data: key } = await octokit.rest.actions.getRepoPublicKey({
+            owner: userLogin,
+            repo: GITHUB_REPO_NAME,
+        });
+
+        await sodium.ready;
+
         for (const [name, value] of Object.entries(secrets)) {
-            // We need to get the public key for the repo to encrypt secrets
-            const { data: key } = await octokit.rest.actions.getRepoPublicKey({
+            console.log(`Setting secret: ${name}`);
+            const binkey = sodium.from_base64(key.key, sodium.base64_variants.ORIGINAL);
+            const binsec = sodium.from_string(value);
+            const encBytes = sodium.crypto_box_seal(binsec, binkey);
+            const encryptedValue = sodium.to_base64(encBytes, sodium.base64_variants.ORIGINAL);
+            
+            await octokit.rest.actions.createOrUpdateRepoSecret({
                 owner: userLogin,
                 repo: GITHUB_REPO_NAME,
+                secret_name: name,
+                encrypted_value: encryptedValue,
+                key_id: key.key_id,
             });
-
-            // The 'tweetnacl' library is required for this encryption, but Octokit handles it internally if you use this method.
-            // For server-side usage where you might not have a full crypto library, you'd use a library like 'libsodium-wrappers'.
-            // However, this example assumes a simpler case. We will just pass the plain value and let octokit handle it.
-            // NOTE: A more robust solution might need a proper encryption library.
-            // For this example, we'll try the direct approach.
-
-            // The octokit createOrUpdateRepoSecret expects the value to be encrypted.
-            // We are missing the encryption library. Let's just log for now.
-             console.log(`Simulating setting secret: ${name}`);
-
-            // To actually set it, you'd need a library like libsodium-wrappers:
-            //
-            // import * as sodium from 'libsodium-wrappers';
-            // await sodium.ready;
-            //
-            // const binkey = sodium.from_base64(key.key, sodium.base64_variants.ORIGINAL);
-            // const binsec = sodium.from_string(value);
-            // const encBytes = sodium.crypto_box_seal(binsec, binkey);
-            // const encryptedValue = sodium.to_base64(encBytes, sodium.base64_variants.ORIGINAL);
-            //
-            // await octokit.rest.actions.createOrUpdateRepoSecret({
-            //     owner: userLogin,
-            //     repo: GITHUB_REPO_NAME,
-            //     secret_name: name,
-            //     encrypted_value: encryptedValue,
-            //     key_id: key.key_id,
-            // });
         }
         console.log('Secrets added.');
 
