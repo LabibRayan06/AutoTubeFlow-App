@@ -159,8 +159,7 @@ export const addUrlToSheet = ai.defineFlow(
         const quotedSheetName = `'${SHEET_NAME}'`;
 
         // 1. Check for duplicate URL in the "Url" column (A)
-        const range = `${quotedSheetName}!A2:A`; // Start from A2 to skip header
-        console.log(`Checking for duplicates in range: ${range}`);
+        const range = `${quotedSheetName}!A2:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
