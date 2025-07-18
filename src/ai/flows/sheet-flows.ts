@@ -35,8 +35,8 @@ async function getGoogleApiClients() {
   auth.setCredentials(session.google_tokens);
 
   // Check if the access token is expired and refresh if necessary
-  if (auth.isTokenExpiring()) {
-    console.log("Google token is expiring. Refreshing...");
+  if (new Date() >= (auth.credentials.expiry_date || 0)) {
+    console.log("Google token is expired. Refreshing...");
     try {
         const { credentials } = await auth.refreshAccessToken();
         session.google_tokens = credentials;
@@ -45,7 +45,10 @@ async function getGoogleApiClients() {
         console.log("Google token refreshed successfully.");
     } catch (refreshError: any) {
         console.error("Failed to refresh Google token:", refreshError);
-        throw new Error(`Could not refresh authentication token. Please try logging in again. Details: ${refreshError.message}`);
+        // Clear the invalid tokens from session and force re-authentication
+        session.google_tokens = undefined;
+        await session.save();
+        throw new Error(`Could not refresh authentication token. Please reconnect your Google account. Details: ${refreshError.message}`);
     }
   }
 
@@ -129,7 +132,7 @@ export const createSheet = ai.defineFlow(
 );
 
 function extractVideoIdFromUrl(url: string): string | null {
-  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/\s]{11})/;
   const match = url.match(regex);
   return match ? match[1] : null;
 }
@@ -179,15 +182,15 @@ export const addUrlToSheet = ai.defineFlow(
 
         const sheetId = session.sheet_id;
         
-        // 1. Check for duplicate URL in the "Url" column (A), starting from the second row.
-        const range = `'${SHEET_NAME}'!A2:A`;
+        // 1. Check for duplicate URL by reading the entire "Url" column.
+        const range = `'${SHEET_NAME}'!A:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
         });
 
-        const values = response.data.values;
-        if (values && values.flat().includes(url)) {
+        const existingUrls = response.data.values?.flat().slice(1) || []; // slice(1) to skip header
+        if (existingUrls.includes(url)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
         }
         
@@ -250,3 +253,5 @@ export const addUrlToSheet = ai.defineFlow(
     }
   }
 );
+
+    
