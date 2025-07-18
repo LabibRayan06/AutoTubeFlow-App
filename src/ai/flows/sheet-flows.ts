@@ -45,6 +45,7 @@ async function getGoogleApiClients() {
         console.log("Google token refreshed successfully.");
     } catch (refreshError: any) {
         console.error("Failed to refresh Google token:", refreshError);
+        // Destroy session if refresh fails? For now, we'll throw.
         throw new Error(`Could not refresh authentication token. Please try logging in again. Details: ${refreshError.message}`);
     }
   }
@@ -79,23 +80,16 @@ export const createSheet = ai.defineFlow(
         sheetId = searchResponse.data.files[0].id!;
         console.log(`Found existing sheet with ID: ${sheetId}`);
 
-        // 2. Validate columns
-        const sheetData = await sheets.spreadsheets.values.get({
+        // 2. Validate columns, and fix if necessary
+        await sheets.spreadsheets.values.update({
             spreadsheetId: sheetId,
-            range: 'A1:Z1',
-        });
-
-        const existingColumns = sheetData.data.values?.[0] || [];
-        const missingColumns = REQUIRED_COLUMNS.filter(col => !existingColumns.includes(col));
-
-        if (missingColumns.length > 0) {
-            const errorMessage = `The existing sheet is missing the following required columns: ${missingColumns.join(', ')}. Please add them manually or delete the sheet and try again.`;
-            console.error(errorMessage);
-            return {
-                success: false,
-                message: errorMessage
+            range: 'A1',
+            valueInputOption: 'RAW',
+            requestBody: {
+                values: [REQUIRED_COLUMNS],
             }
-        }
+        });
+        console.log("Validated and set header row on existing sheet.");
 
       } else {
         // 3. Sheet does not exist, create it
@@ -156,11 +150,10 @@ export const addUrlToSheet = ai.defineFlow(
         }
 
         const sheetId = session.sheet_id;
-        const quotedSheetName = `'${SHEET_NAME}'`;
-
+        
         // 1. Check for duplicate URL in the "Url" column (A)
         // We read the whole column A:A, which works even if the sheet is empty or only has a header.
-        const range = `${quotedSheetName}!A:A`;
+        const range = `'${SHEET_NAME}'!A:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
@@ -169,7 +162,7 @@ export const addUrlToSheet = ai.defineFlow(
         // The 'values' property may be undefined if the sheet is completely empty.
         // We handle this case by treating it as an empty array.
         const values = response.data.values || [];
-        const existingUrls = values.flat();
+        const existingUrls = values.flat(); // .flat() is safe on an empty array.
 
         if (existingUrls.includes(url)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
@@ -189,7 +182,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: quotedSheetName, // Append to the end of the sheet
+            range: `'${SHEET_NAME}'`, // Append to the end of the sheet
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
