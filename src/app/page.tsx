@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CheckCircle2, Rocket } from "lucide-react";
 
 import ConnectGoogleStep from "@/components/autotube-flow/ConnectGoogleStep";
@@ -24,7 +25,14 @@ export default function AutoTubeFlowPage() {
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
 
-
+  const handleStepComplete = useCallback(() => {
+    if (step < STEP_COUNT + 1) {
+      const nextStep = step + 1;
+      setStep(nextStep);
+      localStorage.setItem("autotube-step", nextStep.toString());
+    }
+  }, [step]);
+  
   useEffect(() => {
     setIsClient(true);
     const savedStep = localStorage.getItem("autotube-step");
@@ -49,19 +57,24 @@ export default function AutoTubeFlowPage() {
     }
 
   }, []);
-
-  const handleStepComplete = () => {
-    if (step < STEP_COUNT + 1) {
-      const nextStep = step + 1;
-      setStep(nextStep);
-      localStorage.setItem("autotube-step", nextStep.toString());
-    }
-  };
   
+  useEffect(() => {
+    if (isGoogleConnected && step === 1) {
+      handleStepComplete();
+    }
+  }, [isGoogleConnected, step, handleStepComplete]);
+  
+  useEffect(() => {
+    if (isGithubConnected && step === 3) {
+      handleStepComplete();
+    }
+  }, [isGithubConnected, step, handleStepComplete]);
+
+
   const resetSetup = () => {
     setStep(1);
-    localStorage.setItem("autotube-step", "1");
-    // Also clear other connection statuses if needed
+    localStorage.removeItem("autotube-step");
+    localStorage.removeItem("autotube-sheet-id");
     setIsGoogleConnected(false);
     setIsGithubConnected(false);
   }
@@ -69,11 +82,11 @@ export default function AutoTubeFlowPage() {
   const renderStepComponent = () => {
     switch (step) {
       case 1:
-        return <ConnectGoogleStep onComplete={handleStepComplete} isConnected={isGoogleConnected} />;
+        return <ConnectGoogleStep />;
       case 2:
         return <CreateSheetStep onComplete={handleStepComplete} />;
       case 3:
-        return <ConnectGithubStep onComplete={handleStepComplete} isConnected={isGithubConnected} />;
+        return <ConnectGithubStep />;
       case 4:
         return <ForkRepoStep onComplete={handleStepComplete} />;
       default:

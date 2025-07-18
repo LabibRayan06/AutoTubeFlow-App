@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,12 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
 
-type Props = {
-  onComplete: () => void;
-  isConnected: boolean;
-};
-
-export default function ConnectGoogleStep({ onComplete, isConnected }: Props) {
+export default function ConnectGoogleStep() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -44,12 +40,8 @@ export default function ConnectGoogleStep({ onComplete, isConnected }: Props) {
   };
   
   // This effect will run when the user is redirected back from Google
-  // and completes the step if authentication was successful.
+  // to display any potential errors.
   useEffect(() => {
-    if (isConnected) {
-      onComplete();
-      return;
-    }
     const query = new URLSearchParams(window.location.search);
     if (query.get("google_auth_error")) {
         toast({
@@ -59,7 +51,7 @@ export default function ConnectGoogleStep({ onComplete, isConnected }: Props) {
         });
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [isConnected, onComplete, toast]);
+  }, [toast]);
 
 
   return (

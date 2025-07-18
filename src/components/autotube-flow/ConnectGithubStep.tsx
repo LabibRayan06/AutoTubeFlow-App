@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,12 +15,7 @@ import { Github, GitFork, KeyRound, Loader2 } from "lucide-react";
 import { getGithubAuthUrl } from "@/ai/flows/auth-flows";
 import { useToast } from "@/hooks/use-toast";
 
-type Props = {
-  onComplete: () => void;
-  isConnected: boolean;
-};
-
-export default function ConnectGithubStep({ onComplete, isConnected }: Props) {
+export default function ConnectGithubStep() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -41,10 +37,6 @@ export default function ConnectGithubStep({ onComplete, isConnected }: Props) {
   };
 
   useEffect(() => {
-    if (isConnected) {
-      onComplete();
-      return;
-    }
     const query = new URLSearchParams(window.location.search);
     if (query.get("github_auth_error")) {
         toast({
@@ -55,7 +47,7 @@ export default function ConnectGithubStep({ onComplete, isConnected }: Props) {
         // Clear the query params from URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [isConnected, onComplete, toast]);
+  }, [toast]);
 
   return (
     <Card className="shadow-lg border-border/60">
