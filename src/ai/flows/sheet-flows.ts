@@ -155,9 +155,10 @@ export const addUrlToSheet = ai.defineFlow(
         }
 
         const sheetId = session.sheet_id;
+        const quotedSheetName = `'${SHEET_NAME}'`;
 
         // 1. Check for duplicate URL in the "Url" column (A)
-        const range = `${SHEET_NAME}!A2:A`; // Start from A2 to skip header
+        const range = `${quotedSheetName}!A2:A`; // Start from A2 to skip header
         console.log(`Checking for duplicates in range: ${range}`);
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
@@ -183,7 +184,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: SHEET_NAME, // Append to the end of the sheet
+            range: quotedSheetName, // Append to the end of the sheet
             valueInputOption: 'USER_ENTERED',
             requestBody: {
                 values: [newRow],
