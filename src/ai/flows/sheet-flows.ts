@@ -5,7 +5,7 @@
  * @fileoverview Flows for interacting with Google Sheets.
  *
  * - createSheet - Creates or validates a Google Sheet for tracking videos.
- * - addUrlToSheet - Adds a new video URL to the sheet.
+ * - addUrlToSheet - Adds a new video URL to the sheet, fetching its title and generating an optimized description.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -45,15 +45,14 @@ async function getGoogleApiClients() {
         console.log("Google token refreshed successfully.");
     } catch (refreshError: any) {
         console.error("Failed to refresh Google token:", refreshError);
-        // Destroy session if refresh fails? For now, we'll throw.
         throw new Error(`Could not refresh authentication token. Please try logging in again. Details: ${refreshError.message}`);
     }
   }
 
-
   const sheets = google.sheets({ version: 'v4', auth });
   const drive = google.drive({ version: 'v3', auth });
-  return { sheets, drive, auth };
+  const youtube = google.youtube({ version: 'v3', auth });
+  return { sheets, drive, youtube, auth };
 }
 
 
@@ -129,6 +128,36 @@ export const createSheet = ai.defineFlow(
   }
 );
 
+function extractVideoIdFromUrl(url: string): string | null {
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+const optimizeDescriptionPrompt = ai.definePrompt({
+    name: 'optimizeDescriptionPrompt',
+    input: { schema: z.object({ title: z.string(), description: z.string() }) },
+    output: { schema: z.string() },
+    prompt: `You are a YouTube content expert specializing in SEO and audience engagement.
+    Given the video title and original description, rewrite the description to be more engaging and optimized for YouTube search.
+    
+    Guidelines:
+    - Keep the core message and any important links from the original description.
+    - Start with a compelling, human-readable paragraph that summarizes the video.
+    - Use relevant keywords naturally.
+    - Structure the description with clear headings if appropriate (e.g., "In this video:", "Timestamps:", "Follow me:").
+    - Include a call-to-action (e.g., asking viewers to like, subscribe, or comment).
+    - Ensure the total length is appropriate for a YouTube description.
+    - Do not include the title in the description.
+
+    Video Title: {{{title}}}
+    Original Description:
+    {{{description}}}
+
+    Optimized Description:
+    `,
+});
+
 const AddUrlToSheetInputSchema = z.object({
   url: z.string().url(),
 });
@@ -141,7 +170,7 @@ export const addUrlToSheet = ai.defineFlow(
   },
   async ({ url }) => {
     try {
-        const { sheets } = await getGoogleApiClients();
+        const { sheets, youtube } = await getGoogleApiClients();
         const session = await getIronSession(cookies(), sessionOptions);
 
         if (!session.sheet_id) {
@@ -151,7 +180,7 @@ export const addUrlToSheet = ai.defineFlow(
         const sheetId = session.sheet_id;
         
         // 1. Check for duplicate URL in the "Url" column (A), starting from the second row.
-        const range = `A2:A`;
+        const range = `'${SHEET_NAME}'!A2:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
@@ -161,22 +190,50 @@ export const addUrlToSheet = ai.defineFlow(
         if (values && values.flat().includes(url)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
         }
+        
+        // 2. Extract Video ID and get video details from YouTube API
+        const videoId = extractVideoIdFromUrl(url);
+        if (!videoId) {
+            return { success: false, message: 'Could not extract a valid YouTube video ID from the URL.' };
+        }
+        
+        console.log(`Fetching details for video ID: ${videoId}`);
+        const videoResponse = await youtube.videos.list({
+            part: ['snippet'],
+            id: [videoId],
+        });
 
-        // 2. Append new row if not a duplicate
+        const video = videoResponse.data.items?.[0];
+        if (!video || !video.snippet) {
+            return { success: false, message: 'Could not fetch video details from YouTube.' };
+        }
+        
+        const title = video.snippet.title || '';
+        const originalDescription = video.snippet.description || '';
+        
+        // 3. Generate an optimized description with Gemini
+        console.log('Generating optimized description...');
+        const { output: optimizedDescription } = await optimizeDescriptionPrompt({ title, description: originalDescription });
+        
+        if (!optimizedDescription) {
+             return { success: false, message: 'Failed to generate an optimized description.' };
+        }
+
+        // 4. Append new row with all details
         const dateAdded = new Date().toISOString();
         const newRow = [
-            url,          // Url
-            '',           // Title (to be filled by bot)
-            '',           // Description (to be filled by bot)
-            dateAdded,    // DateAdded
-            'FALSE',      // isProcessed
-            '',           // VideoId (to be filled by bot)
+            url,
+            title,
+            optimizedDescription,
+            dateAdded,
+            'FALSE',
+            videoId,
         ];
 
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `A:F`, 
+            range: `'${SHEET_NAME}'!A:F`,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
