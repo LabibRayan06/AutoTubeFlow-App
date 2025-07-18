@@ -62,11 +62,11 @@ export default function Dashboard({ onReset }: Props) {
           description: result.message,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
        toast({
         variant: "destructive",
         title: "An Error Occurred",
-        description: "Something went wrong while submitting the URL.",
+        description: error.message || "Something went wrong while submitting the URL.",
       });
       console.error(error);
     } finally {
@@ -97,7 +97,7 @@ export default function Dashboard({ onReset }: Props) {
                   <FormControl>
                     <div className="relative">
                       <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="https://www.youtube.com/watch?v=... (try 'duplicate' in url for error)" {...field} className="pl-10"/>
+                      <Input placeholder="https://www.youtube.com/watch?v=..." {...field} className="pl-10"/>
                     </div>
                   </FormControl>
                   <FormMessage />

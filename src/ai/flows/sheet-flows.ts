@@ -146,12 +146,56 @@ export const addUrlToSheet = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean(), message: z.string() }),
   },
   async ({ url }) => {
-    // In a real app, this would add the URL to the Google Sheet.
-    // Here we will simulate checking for duplicates.
-    if (url.includes('duplicate')) {
-      return { success: false, message: 'This video URL is already in your Google Sheet.' };
-    }
+    try {
+        const { sheets } = await getGoogleApiClients();
+        const session = await getIronSession(cookies(), sessionOptions);
 
-    return { success: true, message: 'The video details have been added to your Google Sheet for processing.' };
+        if (!session.sheet_id) {
+            return { success: false, message: 'Google Sheet not configured. Please start over.' };
+        }
+
+        const sheetId = session.sheet_id;
+
+        // 1. Check for duplicate URL in the "Url" column (A)
+        const range = `${SHEET_NAME}!A2:A`; // Start from A2 to skip header
+        console.log(`Checking for duplicates in range: ${range}`);
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: sheetId,
+            range: range,
+        });
+
+        const existingUrls = response.data.values?.flat() || [];
+        if (existingUrls.includes(url)) {
+            return { success: false, message: 'This video URL is already in your Google Sheet.' };
+        }
+
+        // 2. Append new row if not a duplicate
+        const dateAdded = new Date().toISOString();
+        const newRow = [
+            url,          // Url
+            '',           // Title (to be filled by bot)
+            '',           // Description (to be filled by bot)
+            dateAdded,    // DateAdded
+            'FALSE',      // isProcessed
+            '',           // VideoId (to be filled by bot)
+        ];
+
+        console.log('Appending new row to sheet:', newRow);
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: sheetId,
+            range: SHEET_NAME, // Append to the end of the sheet
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                values: [newRow],
+            },
+        });
+
+        return { success: true, message: 'The video has been added to your Google Sheet for processing.' };
+
+    } catch (error: any) {
+        console.error('Error in addUrlToSheet flow:', error.response?.data?.error || error);
+        const detail = error.response?.data?.error?.message || error.message || 'An unknown error occurred.';
+        return { success: false, message: `An error occurred while adding the URL. Details: ${detail}` };
+    }
   }
 );
