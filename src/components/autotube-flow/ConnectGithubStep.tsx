@@ -16,9 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   onComplete: () => void;
+  isConnected: boolean;
 };
 
-export default function ConnectGithubStep({ onComplete }: Props) {
+export default function ConnectGithubStep({ onComplete, isConnected }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -40,12 +41,12 @@ export default function ConnectGithubStep({ onComplete }: Props) {
   };
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    if (query.get("github_auth_success") === "true") {
-      // Clear the query params from URL and call onComplete
-      window.history.replaceState({}, document.title, window.location.pathname);
+    if (isConnected) {
       onComplete();
-    } else if (query.get("github_auth_error")) {
+      return;
+    }
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("github_auth_error")) {
         toast({
           variant: "destructive",
           title: "GitHub Connection Failed",
@@ -54,7 +55,7 @@ export default function ConnectGithubStep({ onComplete }: Props) {
         // Clear the query params from URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [onComplete, toast]);
+  }, [isConnected, onComplete, toast]);
 
   return (
     <Card className="shadow-lg border-border/60">

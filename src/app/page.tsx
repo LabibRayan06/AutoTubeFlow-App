@@ -21,6 +21,9 @@ const stepsConfig = [
 export default function AutoTubeFlowPage() {
   const [step, setStep] = useState(1);
   const [isClient, setIsClient] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isGithubConnected, setIsGithubConnected] = useState(false);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -28,6 +31,17 @@ export default function AutoTubeFlowPage() {
     if (savedStep) {
       setStep(parseInt(savedStep, 10));
     }
+    
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("google_auth_success") === "true") {
+      setIsGoogleConnected(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    if (query.get("github_auth_success") === "true") {
+      setIsGithubConnected(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
   }, []);
 
   const handleStepComplete = () => {
@@ -41,16 +55,19 @@ export default function AutoTubeFlowPage() {
   const resetSetup = () => {
     setStep(1);
     localStorage.setItem("autotube-step", "1");
+    // Also clear other connection statuses if needed
+    setIsGoogleConnected(false);
+    setIsGithubConnected(false);
   }
 
   const renderStepComponent = () => {
     switch (step) {
       case 1:
-        return <ConnectGoogleStep onComplete={handleStepComplete} />;
+        return <ConnectGoogleStep onComplete={handleStepComplete} isConnected={isGoogleConnected} />;
       case 2:
         return <CreateSheetStep onComplete={handleStepComplete} />;
       case 3:
-        return <ConnectGithubStep onComplete={handleStepComplete} />;
+        return <ConnectGithubStep onComplete={handleStepComplete} isConnected={isGithubConnected} />;
       case 4:
         return <ForkRepoStep onComplete={handleStepComplete} />;
       default:
