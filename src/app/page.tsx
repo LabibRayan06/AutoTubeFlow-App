@@ -33,12 +33,18 @@ export default function AutoTubeFlowPage() {
     }
     
     const query = new URLSearchParams(window.location.search);
+    let urlNeedsCleaning = false;
+
     if (query.get("google_auth_success") === "true") {
       setIsGoogleConnected(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
+      urlNeedsCleaning = true;
     }
     if (query.get("github_auth_success") === "true") {
       setIsGithubConnected(true);
+      urlNeedsCleaning = true;
+    }
+
+    if (urlNeedsCleaning) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
