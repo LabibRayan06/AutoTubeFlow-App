@@ -129,7 +129,7 @@ export const createSheet = ai.defineFlow(
 );
 
 function extractVideoIdFromUrl(url: string): string | null {
-  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
   const match = url.match(regex);
   return match ? match[1] : null;
 }
@@ -180,7 +180,7 @@ export const addUrlToSheet = ai.defineFlow(
         const sheetId = session.sheet_id;
         
         // 1. Check for duplicate URL in the "Url" column (A), starting from the second row.
-        const range = `'Sheet1'!A2:A`;
+        const range = `'${SHEET_NAME}'!A2:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
@@ -233,7 +233,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `'Sheet1'!A:F`,
+            range: `'${SHEET_NAME}'!A:F`,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
