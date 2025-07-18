@@ -80,7 +80,7 @@ export const createSheet = ai.defineFlow(
         sheetId = searchResponse.data.files[0].id!;
         console.log(`Found existing sheet with ID: ${sheetId}`);
 
-        // 2. Validate columns, and fix if necessary
+        // 2. Validate columns, and fix if necessary by overwriting the header
         await sheets.spreadsheets.values.update({
             spreadsheetId: sheetId,
             range: 'A1',
@@ -99,21 +99,20 @@ export const createSheet = ai.defineFlow(
             properties: {
               title: SHEET_NAME,
             },
+            sheets: [{
+                properties: {
+                    title: 'Sheet1' // Default sheet name
+                },
+                data: [{
+                    rowData: [{
+                        values: REQUIRED_COLUMNS.map(value => ({ userEnteredValue: { stringValue: value } }))
+                    }]
+                }]
+            }]
           },
         });
         sheetId = createResponse.data.spreadsheetId!;
         console.log(`Created new sheet with ID: ${sheetId}`);
-
-        // 4. Add header row
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: sheetId,
-            range: 'A1',
-            valueInputOption: 'RAW',
-            requestBody: {
-                values: [REQUIRED_COLUMNS],
-            }
-        });
-        console.log("Added header row to new sheet.");
       }
 
       // Save sheetId to session
@@ -152,17 +151,14 @@ export const addUrlToSheet = ai.defineFlow(
         const sheetId = session.sheet_id;
         
         // 1. Check for duplicate URL in the "Url" column (A), starting from the second row.
-        const range = `'${SHEET_NAME}'!A2:A`;
+        const range = `A2:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
         });
 
-        // The 'values' property may be undefined if the range is empty (e.g., sheet only has a header).
-        const values = response.data.values || [];
-        const existingUrls = values.flat(); 
-
-        if (existingUrls.includes(url)) {
+        const values = response.data.values;
+        if (values && values.flat().includes(url)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
         }
 
@@ -180,7 +176,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `'${SHEET_NAME}'!A:F`, 
+            range: `A:F`, 
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
