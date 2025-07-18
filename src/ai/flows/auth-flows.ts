@@ -21,6 +21,7 @@ import sodium from 'libsodium-wrappers';
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/youtube.readonly',
   'https://www.googleapis.com/auth/youtube.upload'
 ];
 const GITHUB_REPO_OWNER = 'labibrayan524';
@@ -155,6 +156,9 @@ export const forkRepo = ai.defineFlow(
         if (!forkExists) {
              return { success: false, message: 'Could not confirm repository fork. Please check your GitHub account and try again.' };
         }
+        
+        // Add another small delay before trying to add secrets
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // 3. Add secrets to the forked repo
         const secrets = {

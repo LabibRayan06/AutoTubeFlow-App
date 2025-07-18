@@ -180,7 +180,7 @@ export const addUrlToSheet = ai.defineFlow(
         const sheetId = session.sheet_id;
         
         // 1. Check for duplicate URL in the "Url" column (A), starting from the second row.
-        const range = `'${SHEET_NAME}'!A2:A`;
+        const range = `'Sheet1'!A2:A`;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
             range: range,
@@ -205,7 +205,7 @@ export const addUrlToSheet = ai.defineFlow(
 
         const video = videoResponse.data.items?.[0];
         if (!video || !video.snippet) {
-            return { success: false, message: 'Could not fetch video details from YouTube.' };
+            return { success: false, message: 'Could not fetch video details from YouTube. Is the video public and the URL correct?' };
         }
         
         const title = video.snippet.title || '';
@@ -233,7 +233,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet:', newRow);
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `'${SHEET_NAME}'!A:F`,
+            range: `'Sheet1'!A:F`,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {

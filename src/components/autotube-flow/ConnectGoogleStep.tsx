@@ -67,7 +67,7 @@ export default function ConnectGoogleStep() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Heads up!</AlertTitle>
           <AlertDescription>
-            Make sure you have enabled the <strong>Google Drive API</strong> and <strong>Google Sheets API</strong> in your Google Cloud project console.
+            Make sure you have enabled the <strong>Google Drive API</strong>, <strong>Google Sheets API</strong>, and <strong>YouTube Data API v3</strong> in your Google Cloud project console.
           </AlertDescription>
         </Alert>
 
@@ -75,7 +75,7 @@ export default function ConnectGoogleStep() {
         <ul className="space-y-3 text-muted-foreground">
           <li className="flex items-center gap-3">
             <Youtube className="w-5 h-5 text-primary-foreground/70" />
-            <span>YouTube Data API (for video uploads)</span>
+            <span>YouTube Data API (to read video details and upload)</span>
           </li>
           <li className="flex items-center gap-3">
             <Database className="w-5 h-5 text-primary-foreground/70" />
