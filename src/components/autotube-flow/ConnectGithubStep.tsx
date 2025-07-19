@@ -22,7 +22,9 @@ export default function ConnectGithubStep() {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const { url } = await getGithubAuthUrl({ originalUrl: window.location.href });
+      // Use just the pathname for the redirect to avoid carrying over old query params.
+      const cleanUrl = window.location.origin + window.location.pathname;
+      const { url } = await getGithubAuthUrl({ originalUrl: cleanUrl });
       // Redirect the user to the GitHub authentication page
       window.location.href = url;
     } catch (error) {
