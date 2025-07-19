@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, Rocket } from "lucide-react";
+import { CheckCircle2, Rocket, RotateCcw } from "lucide-react";
 
 import ConnectGoogleStep from "@/components/autotube-flow/ConnectGoogleStep";
 import CreateSheetStep from "@/components/autotube-flow/CreateSheetStep";
@@ -10,6 +10,7 @@ import ConnectGithubStep from "@/components/autotube-flow/ConnectGithubStep";
 import ForkRepoStep from "@/components/autotube-flow/ForkRepoStep";
 import Dashboard from "@/components/autotube-flow/Dashboard";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const STEP_COUNT = 4;
 const stepsConfig = [
@@ -102,7 +103,7 @@ export default function AutoTubeFlowPage() {
       case 4:
         return <ForkRepoStep onComplete={handleStepComplete} />;
       default:
-        return <Dashboard onReset={resetSetup} />;
+        return <Dashboard />;
     }
   };
 
@@ -117,6 +118,12 @@ export default function AutoTubeFlowPage() {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-8 md:p-12">
+       {step > STEP_COUNT && (
+        <Button variant="ghost" size="sm" onClick={resetSetup} className="absolute top-4 right-4 text-muted-foreground">
+          <RotateCcw className="mr-2 h-3 w-3" />
+          Start Over
+        </Button>
+      )}
       <div className="w-full max-w-2xl mx-auto">
         <div className="text-center mb-8">
             <div className="flex justify-center items-center gap-3 mb-4">

@@ -14,9 +14,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Database, FileSpreadsheet, Loader2, Youtube } from "lucide-react";
 import { getGoogleAuthUrl } from "@/ai/flows/auth-flows";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
-
 
 export default function ConnectGoogleStep() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,14 +60,6 @@ export default function ConnectGoogleStep() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert>
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Heads up!</AlertTitle>
-          <AlertDescription>
-            Make sure you have enabled the <strong>Google Drive API</strong>, <strong>Google Sheets API</strong>, and <strong>YouTube Data API v3</strong> in your Google Cloud project console.
-          </AlertDescription>
-        </Alert>
-
         <p className="font-semibold">We will request the following permissions:</p>
         <ul className="space-y-3 text-muted-foreground">
           <li className="flex items-center gap-3">

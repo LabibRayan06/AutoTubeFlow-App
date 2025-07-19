@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,18 +23,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Link, Loader2, PartyPopper, RotateCcw } from "lucide-react";
+import { Link, Loader2, PartyPopper } from "lucide-react";
 import { addUrlToSheet } from "@/ai/flows/sheet-flows";
 
 const formSchema = z.object({
   url: z.string().url({ message: "Please enter a valid video URL." }),
 });
 
-type Props = {
-  onReset: () => void;
-};
-
-export default function Dashboard({ onReset }: Props) {
+export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -117,12 +113,6 @@ export default function Dashboard({ onReset }: Props) {
           </form>
         </Form>
       </CardContent>
-      <CardFooter>
-        <Button variant="link" size="sm" onClick={onReset} className="mx-auto text-muted-foreground">
-            <RotateCcw className="mr-2 h-3 w-3" />
-            Start Over
-        </Button>
-      </CardFooter>
     </Card>
   );
 }
