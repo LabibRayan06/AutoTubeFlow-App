@@ -205,7 +205,7 @@ export const addUrlToSheet = ai.defineFlow(
         if (!videoId) {
             return { success: false, message: 'Could not extract a valid YouTube video ID from the URL.' };
         }
-
+        
         const isShort = url.includes('/shorts/');
         const canonicalUrl = isShort 
           ? `https://www.youtube.com/shorts/${videoId}`
@@ -215,14 +215,14 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Checking for duplicate URLs...');
         const readResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
-            range: 'Sheet1!A:A', // Read the entire 'A' column
+            range: 'Sheet1!A:A',
         });
 
         const existingUrls = readResponse.data.values?.flat() || [];
         if (existingUrls.includes(canonicalUrl)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
         }
-
+        
         // 3. Get video details from YouTube API
         console.log(`Fetching details for video ID: ${videoId}`);
         const videoResponse = await youtube.videos.list({
@@ -258,14 +258,14 @@ export const addUrlToSheet = ai.defineFlow(
         }
 
         // 5. Append new row with all details
-        const dateAdded = new Date().toISOString().split('T')[0];
+        const dateAdded = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         const newRow = [
             canonicalUrl, // Use the clean, canonical URL
             finalTitle,
             finalDescription,
             dateAdded,
             'FALSE', // isProcessed
-            videoId, // videoId
+            '', // videoId, now initially blank
         ];
 
         console.log('Appending new row to sheet...');
