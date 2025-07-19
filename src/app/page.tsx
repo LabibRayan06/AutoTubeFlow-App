@@ -45,15 +45,27 @@ export default function AutoTubeFlowPage() {
 
     if (query.get("google_auth_success") === "true") {
       setIsGoogleConnected(true);
+      query.delete("google_auth_success");
       urlNeedsCleaning = true;
     }
     if (query.get("github_auth_success") === "true") {
       setIsGithubConnected(true);
+      query.delete("github_auth_success");
+      urlNeedsCleaning = true;
+    }
+     if (query.get("github_auth_error")) {
+      query.delete("github_auth_error");
+      urlNeedsCleaning = true;
+    }
+     if (query.get("google_auth_error")) {
+      query.delete("google_auth_error");
       urlNeedsCleaning = true;
     }
 
+
     if (urlNeedsCleaning) {
-      window.history.replaceState({}, document.title, window.location.pathname);
+        const newPath = window.location.pathname + (query.toString() ? `?${query.toString()}` : '');
+        window.history.replaceState({}, document.title, newPath);
     }
 
   }, []);
