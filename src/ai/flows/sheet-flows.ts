@@ -182,7 +182,19 @@ export const addUrlToSheet = ai.defineFlow(
 
         const sheetId = session.sheet_id;
         
-        // 1. Extract Video ID and get video details from YouTube API
+        // 1. Check for duplicates
+        console.log('Checking for duplicate URLs...');
+        const readResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId: sheetId,
+            range: 'Sheet1!A:A', // Read the entire 'A' column
+        });
+
+        const existingUrls = readResponse.data.values?.flat() || [];
+        if (existingUrls.includes(url)) {
+            return { success: false, message: 'This video URL is already in your Google Sheet.' };
+        }
+
+        // 2. Extract Video ID and get video details from YouTube API
         const videoId = extractVideoIdFromUrl(url);
         if (!videoId) {
             return { success: false, message: 'Could not extract a valid YouTube video ID from the URL.' };
@@ -202,14 +214,13 @@ export const addUrlToSheet = ai.defineFlow(
         const title = video.snippet.title || '';
         const originalDescription = video.snippet.description || '';
         
-        // 2. Generate an optimized description with Gemini
+        // 3. Generate an optimized description with Gemini
         console.log('Generating optimized description...');
-        const { output } = await optimizeDescriptionPrompt({ title, description: originalDescription });
+        const { output: optimizedDescription } = await optimizeDescriptionPrompt({ title, description: originalDescription });
         
-        // Use original description as a fallback if Gemini fails
-        const finalDescription = output || originalDescription;
+        const finalDescription = optimizedDescription || originalDescription;
 
-        // 3. Append new row with all details
+        // 4. Append new row with all details
         const dateAdded = new Date().toISOString();
         const newRow = [
             url,
@@ -223,7 +234,7 @@ export const addUrlToSheet = ai.defineFlow(
         console.log('Appending new row to sheet...');
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: 'A1', // Append to the first table found in the sheet
+            range: 'A1',
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
