@@ -141,26 +141,31 @@ const optimizeVideoDetailsPrompt = ai.definePrompt({
     name: 'optimizeVideoDetailsPrompt',
     input: { schema: z.object({ title: z.string(), description: z.string() }) },
     prompt: `You are a YouTube content expert specializing in SEO and audience engagement.
-    Given the video title and original description, rewrite both to be more engaging and optimized for YouTube search.
-    
+    Based on the provided video title and original description, your task is to optimize both for maximum reach and engagement.
+
     CRITICAL INSTRUCTIONS:
-    - You MUST remove any promotional text, such as mentions of personal channels, Facebook pages, sponsorships, or any other self-promoting links or text.
+    - Your response MUST be a single, valid JSON object with two keys: "optimizedTitle" and "optimizedDescription". Do not wrap it in markdown or any other characters.
+    - You MUST remove any promotional text, such as mentions of personal channels, Facebook pages, sponsorships, or any other self-promoting links or text from the description.
     - Do NOT include the original title in the new description.
-    - Your response must be a single JSON object with two keys: "optimizedTitle" and "optimizedDescription".
 
-    Guidelines for Title:
-    - Create a compelling, clickable, and SEO-friendly title.
-    - Keep it concise and clear.
+    Video Title: "{{{title}}}"
 
-    Guidelines for Description:
-    - Start with a compelling, human-readable paragraph that summarizes the video.
-    - Use relevant keywords naturally.
-    - Structure the description with clear headings if appropriate (e.g., "In this video:", "Timestamps:", "Follow me:").
-    - Include a generic call-to-action (e.g., asking viewers to like, subscribe, or comment).
-
-    Video Title: {{{title}}}
+    {{#if description}}
     Original Description:
     {{{description}}}
+
+    Your Task:
+    1.  **Optimize Title**: Create a compelling, clickable, and SEO-friendly title based on the original. Keep it concise and clear.
+    2.  **Rewrite Description**: Rewrite the original description to be more engaging. Start with a compelling summary. Use relevant keywords naturally. Structure it with clear headings if appropriate.
+    {{else}}
+    Original Description: [NONE PROVIDED]
+
+    Your Task:
+    1.  **Optimize Title**: Create a compelling, clickable, and SEO-friendly title based on the original. Keep it concise and clear.
+    2.  **Generate Description**: Generate a compelling and SEO-friendly description from scratch based on the video's title. Start with a summary, use keywords, and structure it well.
+    {{/if}}
+
+    Finally, add a generic call-to-action to the end of the description (e.g., asking viewers to like, subscribe, or comment).
     `,
 });
 
@@ -232,7 +237,9 @@ export const addUrlToSheet = ai.defineFlow(
             const { text } = await ai.generate({ prompt: optimizeVideoDetailsPrompt.source({ title: originalTitle, description: originalDescription }) });
             
             let optimizedDetails;
-            const parsed = JSON.parse(text);
+            // The model might return a JSON string wrapped in markdown, so we clean it.
+            const cleanedText = text.replace(/^```json\n?/, '').replace(/```$/, '');
+            const parsed = JSON.parse(cleanedText);
 
             if (Array.isArray(parsed)) {
                 optimizedDetails = parsed[0];
