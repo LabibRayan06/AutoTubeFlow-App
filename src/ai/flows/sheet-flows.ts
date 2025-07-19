@@ -137,14 +137,24 @@ function extractVideoIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
+const OptimizeVideoDetailsInputSchema = z.object({
+    title: z.string(),
+    description: z.string(),
+});
+
+const OptimizeVideoDetailsOutputSchema = z.object({
+    optimizedTitle: z.string().describe("The new, SEO-optimized title for the video."),
+    optimizedDescription: z.string().describe("The new, engaging, and SEO-optimized description for the video, with all promotional content removed."),
+});
+
 const optimizeVideoDetailsPrompt = ai.definePrompt({
     name: 'optimizeVideoDetailsPrompt',
-    input: { schema: z.object({ title: z.string(), description: z.string() }) },
+    input: { schema: OptimizeVideoDetailsInputSchema },
+    output: { schema: OptimizeVideoDetailsOutputSchema },
     prompt: `You are a YouTube content expert specializing in SEO and audience engagement.
     Based on the provided video title and original description, your task is to optimize both for maximum reach and engagement.
 
     CRITICAL INSTRUCTIONS:
-    - Your response MUST be a single, valid JSON object with two keys: "optimizedTitle" and "optimizedDescription". Do not wrap it in markdown or any other characters.
     - You MUST remove any promotional text, such as mentions of personal channels, Facebook pages, sponsorships, or any other self-promoting links or text from the description.
     - Do NOT include the original title in the new description.
 
@@ -234,23 +244,14 @@ export const addUrlToSheet = ai.defineFlow(
 
         try {
             console.log('Generating optimized content...');
-            const { text } = await ai.generate({ prompt: optimizeVideoDetailsPrompt.source({ title: originalTitle, description: originalDescription }) });
+            const { output } = await optimizeVideoDetailsPrompt({ title: originalTitle, description: originalDescription });
             
-            let optimizedDetails;
-            // The model might return a JSON string wrapped in markdown, so we clean it.
-            const cleanedText = text.replace(/^```json\n?/, '').replace(/```$/, '');
-            const parsed = JSON.parse(cleanedText);
-
-            if (Array.isArray(parsed)) {
-                optimizedDetails = parsed[0];
-            } else {
-                optimizedDetails = parsed;
-            }
-
-            if (optimizedDetails?.optimizedTitle && optimizedDetails?.optimizedDescription) {
-                finalTitle = optimizedDetails.optimizedTitle;
-                finalDescription = optimizedDetails.optimizedDescription;
+            if (output) {
+                finalTitle = output.optimizedTitle;
+                finalDescription = output.optimizedDescription;
                 console.log('Successfully generated optimized content.');
+            } else {
+                 console.warn("AI optimization returned null, falling back to original content.");
             }
         } catch (e) {
             console.error("Failed to generate or parse optimized content, falling back to original.", e);
