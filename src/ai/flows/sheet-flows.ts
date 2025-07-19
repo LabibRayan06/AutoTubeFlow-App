@@ -140,13 +140,13 @@ function extractVideoIdFromUrl(url: string): string | null {
 const optimizeVideoDetailsPrompt = ai.definePrompt({
     name: 'optimizeVideoDetailsPrompt',
     input: { schema: z.object({ title: z.string(), description: z.string() }) },
-    output: { schema: z.object({ optimizedTitle: z.string(), optimizedDescription: z.string() }).nullable() },
     prompt: `You are a YouTube content expert specializing in SEO and audience engagement.
     Given the video title and original description, rewrite both to be more engaging and optimized for YouTube search.
     
     CRITICAL INSTRUCTIONS:
     - You MUST remove any promotional text, such as mentions of personal channels, Facebook pages, sponsorships, or any other self-promoting links or text.
     - Do NOT include the original title in the new description.
+    - Your response must be a single JSON object with two keys: "optimizedTitle" and "optimizedDescription".
 
     Guidelines for Title:
     - Create a compelling, clickable, and SEO-friendly title.
@@ -224,11 +224,30 @@ export const addUrlToSheet = ai.defineFlow(
         const originalDescription = video.snippet.description || '';
         
         // 4. Generate an optimized title and description with Gemini
-        console.log('Generating optimized content...');
-        const { output: optimizedDetails } = await optimizeVideoDetailsPrompt({ title: originalTitle, description: originalDescription });
-        
-        const finalTitle = optimizedDetails?.optimizedTitle || originalTitle;
-        const finalDescription = optimizedDetails?.optimizedDescription || originalDescription;
+        let finalTitle = originalTitle;
+        let finalDescription = originalDescription;
+
+        try {
+            console.log('Generating optimized content...');
+            const { text } = await ai.generate({ prompt: optimizeVideoDetailsPrompt.source({ title: originalTitle, description: originalDescription }) });
+            
+            let optimizedDetails;
+            const parsed = JSON.parse(text);
+
+            if (Array.isArray(parsed)) {
+                optimizedDetails = parsed[0];
+            } else {
+                optimizedDetails = parsed;
+            }
+
+            if (optimizedDetails?.optimizedTitle && optimizedDetails?.optimizedDescription) {
+                finalTitle = optimizedDetails.optimizedTitle;
+                finalDescription = optimizedDetails.optimizedDescription;
+                console.log('Successfully generated optimized content.');
+            }
+        } catch (e) {
+            console.error("Failed to generate or parse optimized content, falling back to original.", e);
+        }
 
         // 5. Append new row with all details
         const dateAdded = new Date().toISOString();
