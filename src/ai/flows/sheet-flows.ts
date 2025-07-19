@@ -140,7 +140,7 @@ function extractVideoIdFromUrl(url: string): string | null {
 const optimizeDescriptionPrompt = ai.definePrompt({
     name: 'optimizeDescriptionPrompt',
     input: { schema: z.object({ title: z.string(), description: z.string() }) },
-    output: { schema: z.string() },
+    output: { schema: z.string().nullable() },
     prompt: `You are a YouTube content expert specializing in SEO and audience engagement.
     Given the video title and original description, rewrite the description to be more engaging and optimized for YouTube search.
     
