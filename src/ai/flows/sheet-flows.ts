@@ -85,7 +85,7 @@ export const createSheet = ai.defineFlow(
         // 2. Validate columns, and fix if necessary by overwriting the header
         await sheets.spreadsheets.values.update({
             spreadsheetId: sheetId,
-            range: 'A1',
+            range: 'Sheet1!A1',
             valueInputOption: 'RAW',
             requestBody: {
                 values: [REQUIRED_COLUMNS],
@@ -181,8 +181,19 @@ export const addUrlToSheet = ai.defineFlow(
         }
 
         const sheetId = session.sheet_id;
+
+        // 1. Normalize URL and extract Video ID
+        const videoId = extractVideoIdFromUrl(url);
+        if (!videoId) {
+            return { success: false, message: 'Could not extract a valid YouTube video ID from the URL.' };
+        }
+
+        const isShort = url.includes('/shorts/');
+        const canonicalUrl = isShort 
+          ? `https://www.youtube.com/shorts/${videoId}`
+          : `https://www.youtube.com/watch?v=${videoId}`;
         
-        // 1. Check for duplicates
+        // 2. Check for duplicates using the canonical URL
         console.log('Checking for duplicate URLs...');
         const readResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: sheetId,
@@ -190,16 +201,11 @@ export const addUrlToSheet = ai.defineFlow(
         });
 
         const existingUrls = readResponse.data.values?.flat() || [];
-        if (existingUrls.includes(url)) {
+        if (existingUrls.includes(canonicalUrl)) {
             return { success: false, message: 'This video URL is already in your Google Sheet.' };
         }
 
-        // 2. Extract Video ID and get video details from YouTube API
-        const videoId = extractVideoIdFromUrl(url);
-        if (!videoId) {
-            return { success: false, message: 'Could not extract a valid YouTube video ID from the URL.' };
-        }
-        
+        // 3. Get video details from YouTube API
         console.log(`Fetching details for video ID: ${videoId}`);
         const videoResponse = await youtube.videos.list({
             part: ['snippet'],
@@ -214,16 +220,16 @@ export const addUrlToSheet = ai.defineFlow(
         const title = video.snippet.title || '';
         const originalDescription = video.snippet.description || '';
         
-        // 3. Generate an optimized description with Gemini
+        // 4. Generate an optimized description with Gemini
         console.log('Generating optimized description...');
         const { output: optimizedDescription } = await optimizeDescriptionPrompt({ title, description: originalDescription });
         
         const finalDescription = optimizedDescription || originalDescription;
 
-        // 4. Append new row with all details
+        // 5. Append new row with all details
         const dateAdded = new Date().toISOString();
         const newRow = [
-            url,
+            canonicalUrl, // Use the clean, canonical URL
             title,
             finalDescription,
             dateAdded,
