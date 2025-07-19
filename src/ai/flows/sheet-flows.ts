@@ -204,27 +204,26 @@ export const addUrlToSheet = ai.defineFlow(
         
         // 2. Generate an optimized description with Gemini
         console.log('Generating optimized description...');
-        const { output: optimizedDescription } = await optimizeDescriptionPrompt({ title, description: originalDescription });
+        const { output } = await optimizeDescriptionPrompt({ title, description: originalDescription });
         
-        if (!optimizedDescription) {
-             return { success: false, message: 'Failed to generate an optimized description.' };
-        }
+        // Use original description as a fallback if Gemini fails
+        const finalDescription = output || originalDescription;
 
         // 3. Append new row with all details
         const dateAdded = new Date().toISOString();
         const newRow = [
             url,
             title,
-            optimizedDescription,
+            finalDescription,
             dateAdded,
-            'FALSE',
+            'FALSE', // isProcessed
             videoId,
         ];
 
-        console.log('Appending new row to sheet:', newRow);
+        console.log('Appending new row to sheet...');
         await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `'${SHEET_NAME}'!A:F`,
+            range: 'A1', // Append to the first table found in the sheet
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
