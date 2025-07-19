@@ -258,14 +258,14 @@ export const addUrlToSheet = ai.defineFlow(
         }
 
         // 5. Append new row with all details
-        const dateAdded = new Date().toISOString();
+        const dateAdded = new Date().toISOString().split('T')[0];
         const newRow = [
             canonicalUrl, // Use the clean, canonical URL
             finalTitle,
             finalDescription,
             dateAdded,
             'FALSE', // isProcessed
-            videoId,
+            videoId, // videoId
         ];
 
         console.log('Appending new row to sheet...');
