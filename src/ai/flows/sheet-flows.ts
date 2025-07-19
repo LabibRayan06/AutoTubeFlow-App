@@ -137,27 +137,30 @@ function extractVideoIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
-const optimizeDescriptionPrompt = ai.definePrompt({
-    name: 'optimizeDescriptionPrompt',
+const optimizeVideoDetailsPrompt = ai.definePrompt({
+    name: 'optimizeVideoDetailsPrompt',
     input: { schema: z.object({ title: z.string(), description: z.string() }) },
-    output: { schema: z.string().nullable() },
+    output: { schema: z.object({ optimizedTitle: z.string(), optimizedDescription: z.string() }).nullable() },
     prompt: `You are a YouTube content expert specializing in SEO and audience engagement.
-    Given the video title and original description, rewrite the description to be more engaging and optimized for YouTube search.
+    Given the video title and original description, rewrite both to be more engaging and optimized for YouTube search.
     
-    Guidelines:
-    - Keep the core message and any important links from the original description.
+    CRITICAL INSTRUCTIONS:
+    - You MUST remove any promotional text, such as mentions of personal channels, Facebook pages, sponsorships, or any other self-promoting links or text.
+    - Do NOT include the original title in the new description.
+
+    Guidelines for Title:
+    - Create a compelling, clickable, and SEO-friendly title.
+    - Keep it concise and clear.
+
+    Guidelines for Description:
     - Start with a compelling, human-readable paragraph that summarizes the video.
     - Use relevant keywords naturally.
     - Structure the description with clear headings if appropriate (e.g., "In this video:", "Timestamps:", "Follow me:").
-    - Include a call-to-action (e.g., asking viewers to like, subscribe, or comment).
-    - Ensure the total length is appropriate for a YouTube description.
-    - Do not include the title in the description.
+    - Include a generic call-to-action (e.g., asking viewers to like, subscribe, or comment).
 
     Video Title: {{{title}}}
     Original Description:
     {{{description}}}
-
-    Optimized Description:
     `,
 });
 
@@ -217,20 +220,21 @@ export const addUrlToSheet = ai.defineFlow(
             return { success: false, message: 'Could not fetch video details from YouTube. Is the video public and the URL correct?' };
         }
         
-        const title = video.snippet.title || '';
+        const originalTitle = video.snippet.title || '';
         const originalDescription = video.snippet.description || '';
         
-        // 4. Generate an optimized description with Gemini
-        console.log('Generating optimized description...');
-        const { output: optimizedDescription } = await optimizeDescriptionPrompt({ title, description: originalDescription });
+        // 4. Generate an optimized title and description with Gemini
+        console.log('Generating optimized content...');
+        const { output: optimizedDetails } = await optimizeVideoDetailsPrompt({ title: originalTitle, description: originalDescription });
         
-        const finalDescription = optimizedDescription || originalDescription;
+        const finalTitle = optimizedDetails?.optimizedTitle || originalTitle;
+        const finalDescription = optimizedDetails?.optimizedDescription || originalDescription;
 
         // 5. Append new row with all details
         const dateAdded = new Date().toISOString();
         const newRow = [
             canonicalUrl, // Use the clean, canonical URL
-            title,
+            finalTitle,
             finalDescription,
             dateAdded,
             'FALSE', // isProcessed
