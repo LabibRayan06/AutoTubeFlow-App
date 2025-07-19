@@ -64,7 +64,7 @@ export default function ForkRepoStep({ onComplete }: Props) {
       <CardContent className="space-y-6">
         <div>
             <p className="font-semibold mb-2 flex items-center gap-2"><GitFork className="w-4 h-4"/> Repository to Fork:</p>
-            <p className="font-mono text-sm bg-muted text-muted-foreground p-2 rounded-md">labibrayan524/yt-bot</p>
+            <p className="font-mono text-sm bg-muted text-muted-foreground p-2 rounded-md">LabibRayan06/AutoTubeFlow</p>
         </div>
          <div>
             <p className="font-semibold mb-2 flex items-center gap-2"><KeyRound className="w-4 h-4" /> Secrets to Add:</p>

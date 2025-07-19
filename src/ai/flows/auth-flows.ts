@@ -25,8 +25,8 @@ const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/youtube.readonly',
   'https://www.googleapis.com/auth/youtube.upload'
 ];
-const GITHUB_REPO_OWNER = 'labibrayan524';
-const GITHUB_REPO_NAME = 'yt-bot';
+const GITHUB_REPO_OWNER = 'LabibRayan06';
+const GITHUB_REPO_NAME = 'AutoTubeFlow';
 
 function getGoogleOAuth2Client() {
   if (!process.env.NEXT_PUBLIC_BASE_URL) {
