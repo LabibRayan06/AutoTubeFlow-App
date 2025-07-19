@@ -28,6 +28,14 @@ export default function CreateSheetStep({ onComplete }: Props) {
       const result = await createSheet();
       if (result.success && result.sheetId) {
         localStorage.setItem("autotube-sheet-id", result.sheetId);
+        
+        // Clean up the URL
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has("google_auth_success")) {
+          currentUrl.searchParams.delete("google_auth_success");
+          window.history.replaceState({}, document.title, currentUrl.href);
+        }
+
         onComplete();
       } else {
         toast({
