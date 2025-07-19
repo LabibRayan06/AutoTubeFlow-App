@@ -182,19 +182,7 @@ export const addUrlToSheet = ai.defineFlow(
 
         const sheetId = session.sheet_id;
         
-        // 1. Check for duplicate URL by reading the entire "Url" column.
-        const range = `'${SHEET_NAME}'!A:A`;
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: sheetId,
-            range: range,
-        });
-
-        const existingUrls = response.data.values?.flat().slice(1) || []; // slice(1) to skip header
-        if (existingUrls.includes(url)) {
-            return { success: false, message: 'This video URL is already in your Google Sheet.' };
-        }
-        
-        // 2. Extract Video ID and get video details from YouTube API
+        // 1. Extract Video ID and get video details from YouTube API
         const videoId = extractVideoIdFromUrl(url);
         if (!videoId) {
             return { success: false, message: 'Could not extract a valid YouTube video ID from the URL.' };
@@ -214,7 +202,7 @@ export const addUrlToSheet = ai.defineFlow(
         const title = video.snippet.title || '';
         const originalDescription = video.snippet.description || '';
         
-        // 3. Generate an optimized description with Gemini
+        // 2. Generate an optimized description with Gemini
         console.log('Generating optimized description...');
         const { output: optimizedDescription } = await optimizeDescriptionPrompt({ title, description: originalDescription });
         
@@ -222,7 +210,7 @@ export const addUrlToSheet = ai.defineFlow(
              return { success: false, message: 'Failed to generate an optimized description.' };
         }
 
-        // 4. Append new row with all details
+        // 3. Append new row with all details
         const dateAdded = new Date().toISOString();
         const newRow = [
             url,
@@ -253,5 +241,3 @@ export const addUrlToSheet = ai.defineFlow(
     }
   }
 );
-
-    
