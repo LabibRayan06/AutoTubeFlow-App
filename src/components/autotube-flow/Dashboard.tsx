@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,15 +23,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Link, Loader2, PartyPopper } from "lucide-react";
-import { addUrlToSheet } from "@/ai/flows/sheet-flows";
+import { Link, Loader2, PartyPopper, RefreshCw, CheckCircle, Hourglass, ListTodo, AlertCircle } from "lucide-react";
+import { addUrlToSheet, getSheetStats } from "@/ai/flows/sheet-flows";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formSchema = z.object({
   url: z.string().url({ message: "Please enter a valid video URL." }),
 });
 
+type Stats = {
+  total: number;
+  processed: number;
+  pending: number;
+};
+
+function StatCard({ icon: Icon, title, value, isLoading }: { icon: React.ElementType, title: string, value: number, isLoading: boolean }) {
+  return (
+    <Card className="flex-1">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-8 w-1/2" />
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [stats, setStats] = useState<Stats>({ total: 0, processed: 0, pending: 0 });
+  const [statsError, setStatsError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -40,6 +70,27 @@ export default function Dashboard() {
       url: "",
     },
   });
+  
+  const fetchStats = useCallback(async () => {
+    setIsStatsLoading(true);
+    setStatsError(null);
+    try {
+      const result = await getSheetStats();
+      if (result.success && result.stats) {
+        setStats(result.stats);
+      } else {
+        setStatsError(result.message || "Failed to load stats.");
+      }
+    } catch (error: any) {
+      setStatsError(error.message || "An unexpected error occurred.");
+    } finally {
+      setIsStatsLoading(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -51,6 +102,7 @@ export default function Dashboard() {
           description: result.message,
         });
         form.reset();
+        fetchStats(); // Refresh stats after adding a new URL
       } else {
         toast({
           variant: "destructive",
@@ -112,6 +164,27 @@ export default function Dashboard() {
             </Button>
           </form>
         </Form>
+        <Separator className="my-6" />
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Processing Stats</h3>
+                 <Button variant="outline" size="sm" onClick={fetchStats} disabled={isStatsLoading}>
+                    <RefreshCw className={`h-4 w-4 ${isStatsLoading ? 'animate-spin' : ''}`} />
+                </Button>
+            </div>
+            {statsError ? (
+                <div className="text-destructive text-sm p-3 bg-destructive/10 rounded-md flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>{statsError}</p>
+                </div>
+            ) : (
+                 <div className="flex flex-col sm:flex-row gap-4">
+                    <StatCard icon={ListTodo} title="Total Videos" value={stats.total} isLoading={isStatsLoading} />
+                    <StatCard icon={CheckCircle} title="Processed" value={stats.processed} isLoading={isStatsLoading} />
+                    <StatCard icon={Hourglass} title="Pending" value={stats.pending} isLoading={isStatsLoading} />
+                </div>
+            )}
+        </div>
       </CardContent>
     </Card>
   );

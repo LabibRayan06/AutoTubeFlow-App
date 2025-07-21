@@ -6,6 +6,7 @@
  *
  * - createSheet - Creates or validates a Google Sheet for tracking videos.
  * - addUrlToSheet - Adds a new video URL to the sheet, fetching its title and generating an optimized description.
+ * - getSheetStats - Retrieves statistics from the sheet about video processing status.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -287,4 +288,63 @@ export const addUrlToSheet = ai.defineFlow(
         return { success: false, message: `An error occurred while adding the URL. Details: ${detail}` };
     }
   }
+);
+
+
+const SheetStatsSchema = z.object({
+    total: z.number(),
+    processed: z.number(),
+    pending: z.number(),
+});
+
+export const getSheetStats = ai.defineFlow(
+    {
+        name: 'getSheetStats',
+        outputSchema: z.object({
+            success: z.boolean(),
+            stats: SheetStatsSchema.optional(),
+            message: z.string().optional(),
+        })
+    },
+    async () => {
+        try {
+            const { sheets } = await getGoogleApiClients();
+            const session = await getIronSession(cookies(), sessionOptions);
+
+            if (!session.sheet_id) {
+                return { success: false, message: 'Google Sheet not configured. Please start over.' };
+            }
+            const sheetId = session.sheet_id;
+
+            // Read the 'Url' and 'isProcessed' columns
+            const readResponse = await sheets.spreadsheets.values.get({
+                spreadsheetId: sheetId,
+                range: 'Sheet1!A:E', // Read columns A to E
+            });
+            
+            const rows = readResponse.data.values;
+
+            if (!rows || rows.length < 2) {
+                 // No data rows besides the header
+                return { success: true, stats: { total: 0, processed: 0, pending: 0 }};
+            }
+
+            // Skip header row by slicing at 1
+            const dataRows = rows.slice(1);
+
+            const total = dataRows.filter(row => row[0] && row[0].trim() !== '').length; // Count rows with a URL
+            const processed = dataRows.filter(row => row[4] && row[4].toUpperCase() === 'TRUE').length;
+            const pending = total - processed;
+            
+            return {
+                success: true,
+                stats: { total, processed, pending }
+            };
+
+        } catch (error: any) {
+            console.error('Error in getSheetStats flow:', error.response?.data?.error || error);
+            const detail = error.response?.data?.error?.message || error.message || 'An unknown error occurred.';
+            return { success: false, message: `An error occurred while fetching stats. Details: ${detail}` };
+        }
+    }
 );
